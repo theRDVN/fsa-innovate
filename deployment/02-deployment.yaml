@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+# Opis deploymentu, nepovine udaje
+metadata:
+  name: innovate
+  namespace: develop
+  # namespave: myapp
+# annotation su nepovine udaje pouzite na popis deploymentu,k tore ale niesu pouzite ako identifikatory pri query
+  annotations:
+    description: My training app
+    release: "1.0"
+spec:
+  replicas: 5
+  strategy:
+    # type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+    # type: RollingUpdate
+    # rollingUpdate:
+    #   maxUnavailable: 10%
+    #   maxSurge: 10%
+# Selector sluzi na prepojenie servicov s deploymentami
+  selector:
+    matchLabels:
+      app: innovate
+  template:
+    metadata:
+      labels:
+# Labels  - Identifying metadata that you can use to sort and select sets of API objects. Labels have many applications, including the following:
+# Sluzia na identifikaciu objektov v API calloch
+# kubectl get deployments --selector=app=innovate
+        app: innovate
+      annotations:
+        version: "1.0"
+        maintainer: Radovan Pieter
+    spec:
+      containers:
+      - name: innovate
+        image: fsainframonkostefanregistry.azurecr.io/monko-cicd.westeurope.azurecontainer.io/innovate:latest
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+      - name: exporter
+        image: nginx/nginx-prometheus-exporter:0.10.0
+        args: ["-nginx.scrape-uri", "http://localhost/nginx_status"]
+        ports:
+        - containerPort: 9113
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
